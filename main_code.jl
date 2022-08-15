@@ -134,7 +134,8 @@ hp_codim2, = continuation(jet[1:2]..., br, 1, (@lens _.beta2),
 	bdlinsolver = MatrixBLS(),
 	)
 
-	scene = plot(hp_codim2, vars=(:beta2, :x), branchlabel = "HOPF")
+	scene = plot(hp_codim2, vars=(:beta2, :h), branchlabel = "HOPF")
 	plot!(scene, br, xlims=(0.8,1.3))
 	plot(hp_codim2)
+	title!("Codim-2 bifurcations along Hopf curve")
 	savefig("codim2.png")
