@@ -4,7 +4,7 @@ using BifurcationKit
 const BK = BifurcationKit
 
 norminf(x) =  norm(x, Inf)
-
+# Predator Prey System from Ref.[3]
 function pp!(du, u, p, t)
   @unpack beta1, beta2, d, h, c, zeta = p
   x, y, z = u
@@ -17,13 +17,16 @@ function pp!(du, u, p, t)
  du
 end
 
+#Preparing forward differentiation of the vector field
 pp(z, p) = pp!(similar(z), z, p, 0)
 dpp(z,p) = ForwardDiff.jacobian(x -> pp(x,p), z)
 jet = BK.getJet(pp, dpp)
 
+# setting parameters, we start with h=0.9
 par = (beta1 = 0.2, beta2 = 0.25, d = 0.17, h = 0.9, c = 0.2, zeta = 0.11)
 u0 = [200.0, 50.0, 5.0]
 
+# BifurcationKit bifurcation analysis
 opts_br = ContinuationPar(pMin = 0.1, pMax = 15.0,
                # parameters to have a smooth result
                ds = 0.04, dsmax = 0.05,
@@ -37,11 +40,11 @@ recordFromSolution = (u, p) -> ( x = u[1], y = u[2], z = u[3]),
 tangentAlgo = BorderedPred(),
 plot = true, normC = norminf)
 
-scene = plot(br, plotfold=false, markersize=3, legend=:topleft)
-savefig("continuation.png")
+scene = plot(br, plotfold=false, markersize=6, legend=:topleft)
+#savefig("continuation.png")
 
 
-######
+# automatic bifurcationdiagram
 
 diagram = bifurcationdiagram(jet...,
 	# initial point and parameter
@@ -98,8 +101,10 @@ opts_po_cont = ContinuationPar(dsmax = 0.1, ds= -0.0001, dsmin = 1e-4, pMax = 5.
 
 	scene = plot(br, br_potrap, markersize = 3)
 plot!(scene, br_potrap.param, br_potrap.min, label = "")
-savefig("diagram.png")
-##
+#savefig("diagram.png")
+
+
+## Plotting the periodic orbits found under the Hopf bifurcation with resepct to h
 plot()
 # fetch the saved solutions
 for sol in br_potrap.sol[1:2:40]
@@ -109,11 +114,11 @@ for sol in br_potrap.sol[1:2:40]
 	traj = BK.getPeriodicOrbit(br_potrap.functional, po, @set par.h = sol.p)
 	plot!(traj[1,:], traj[3,:], xlabel = "x", ylabel = "z", label = "")
 end
-title!("Periodic Orbits")
-savefig("periodic_orbits.png")
+#title!("Periodic Orbits")
+#savefig("periodic_orbits.png")
+
+
 ###### codim 2 bifurcation search
-
-
 hp_codim2, = continuation(jet[1:2]..., br, 1, (@lens _.beta2),
 	ContinuationPar(opts_br, pMin = -0.01, pMax = 1.4,
 		ds = -0.001, dsmax = 0.01) ;
@@ -133,9 +138,10 @@ hp_codim2, = continuation(jet[1:2]..., br, 1, (@lens _.beta2),
 	# use this linear bordered solver, better for ODEs
 	bdlinsolver = MatrixBLS(),
 	)
+	#scene = plot(hp_codim2, vars=(:beta2, :h), branchlabel=["Hopf Curve" "Fold-Hopf" "Bautin" "Bogdanov Takens (guess)"] )
+	#plot(scene)
+	#plot!(scene, br, xlims=(0.8,1.3), labels="asdf")
 
-	scene = plot(hp_codim2, vars=(:beta2, :h), branchlabel = "HOPF")
-	plot!(scene, br, xlims=(0.8,1.3))
-	plot(hp_codim2)
+	plot(hp_codim2, vars=(:beta2, :h),labels=["Hopf Curve" "Fold-Hopf" "Fold-Hopf" "Bautin" "Bogdanov Takens (guess)"], markersize=6)
 	title!("Codim-2 bifurcations along Hopf curve")
 	savefig("codim2.png")
